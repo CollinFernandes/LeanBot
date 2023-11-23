@@ -1,6 +1,8 @@
 const { log } = require("../../functions");
 const ExtendedClient = require('../../class/ExtendedClient');
 const { ActivityType } = require("discord.js");
+const { DownloadCosmetics } = require("../../class/Utils");
+const config = require("../../config");
 
 module.exports = {
     event: 'ready',
@@ -18,5 +20,7 @@ module.exports = {
             activities: [{ name: `Lean`, type: ActivityType.Watching }],
             status: 'online',
         });
+        DownloadCosmetics();
+        config.cosmetics = require('../../../temp/cosmetics.json')
     }
 };
