@@ -6,31 +6,31 @@ const { FindCosmetic } = require('../../../class/Utils')
 
 module.exports = {
     structure: new SlashCommandBuilder()
-        .setName('setemote')
-        .setDescription('Set the Emote of your BOT!')
-        .addStringOption(option => option.setName('emoteid')
-        .setDescription('Id or Name of the Emote')
-        .setRequired(true)),
+        .setName('setplaying')
+        .setDescription('Set the Playing Status of your BOT!')
+        .addBooleanOption(option => 
+            option.setName('isplaying')
+            .setDescription('status whether the bot is in game')
+            .setRequired(true))
+        .addIntegerOption(option => 
+            option.setName('playercount')
+            .setDescription('set the player count of the lobby')
+            .setRequired(true)),
     /**
      * @param {ExtendedClient} client 
      * @param {ChatInputCommandInteraction} interaction 
      */
     run: async (client, interaction) => {
         const { options, channel } = interaction;
-        const skinId = options.getString('emoteid')
-        const skin = await FindCosmetic(config.cosmetics, skinId, "emote")
+        const isPlaying = options.getBoolean('isplaying')
+        const playerCount = options.getInteger('playercount')
         const res = new EmbedBuilder()
         .setColor('#4b16ff')
-        .setDescription(`*${interaction.user} | Set emote to \`\`${skinId}\`\`*`);
-        if (!skin) {
-            res.setDescription(`*Could not find a emote named \`\`${skinId}\`\`*`)
-            return interaction.reply({embeds: [res]});
-        }
+        .setDescription(`*${interaction.user} | Set playing status to \`\`${isPlaying}\`\`*`);
 
         var bot = new Client;
         bot = config.bots[interaction.user.id];
-        console.log(skin.id)
-        bot.party.me.setEmote(skin.id);
+        bot.party.me.setPlaying(isPlaying, playerCount);
         interaction.reply({embeds: [res]})
     }
 };

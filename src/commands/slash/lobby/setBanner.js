@@ -6,10 +6,10 @@ const { FindCosmetic } = require('../../../class/Utils')
 
 module.exports = {
     structure: new SlashCommandBuilder()
-        .setName('setemote')
-        .setDescription('Set the Emote of your BOT!')
-        .addStringOption(option => option.setName('emoteid')
-        .setDescription('Id or Name of the Emote')
+        .setName('setbanner')
+        .setDescription('Set the Banner of your BOT!')
+        .addStringOption(option => option.setName('banner')
+        .setDescription('Id or Name of the Banner!')
         .setRequired(true)),
     /**
      * @param {ExtendedClient} client 
@@ -17,20 +17,19 @@ module.exports = {
      */
     run: async (client, interaction) => {
         const { options, channel } = interaction;
-        const skinId = options.getString('emoteid')
-        const skin = await FindCosmetic(config.cosmetics, skinId, "emote")
+        const skinId = options.getString('banner')
+        const skin = await FindCosmetic(config.cosmetics, skinId, "banner")
         const res = new EmbedBuilder()
         .setColor('#4b16ff')
-        .setDescription(`*${interaction.user} | Set emote to \`\`${skinId}\`\`*`);
+        .setDescription(`*${interaction.user} | Set banner to \`\`${skinId}\`\`*`);
         if (!skin) {
-            res.setDescription(`*Could not find a emote named \`\`${skinId}\`\`*`)
+            res.setDescription(`*Could not find a banner named \`\`${skinId}\`\`*`)
             return interaction.reply({embeds: [res]});
         }
 
         var bot = new Client;
         bot = config.bots[interaction.user.id];
-        console.log(skin.id)
-        bot.party.me.setEmote(skin.id);
+        bot.party.me.setBanner(skin.id);
         interaction.reply({embeds: [res]})
     }
 };

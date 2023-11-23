@@ -6,10 +6,10 @@ const { FindCosmetic } = require('../../../class/Utils')
 
 module.exports = {
     structure: new SlashCommandBuilder()
-        .setName('setemote')
-        .setDescription('Set the Emote of your BOT!')
-        .addStringOption(option => option.setName('emoteid')
-        .setDescription('Id or Name of the Emote')
+        .setName('setlevel')
+        .setDescription('Set the Level of your BOT!')
+        .addIntegerOption(option => option.setName('level')
+        .setDescription('Level you want to Set!')
         .setRequired(true)),
     /**
      * @param {ExtendedClient} client 
@@ -17,20 +17,14 @@ module.exports = {
      */
     run: async (client, interaction) => {
         const { options, channel } = interaction;
-        const skinId = options.getString('emoteid')
-        const skin = await FindCosmetic(config.cosmetics, skinId, "emote")
+        const level = options.getInteger('level')
         const res = new EmbedBuilder()
         .setColor('#4b16ff')
-        .setDescription(`*${interaction.user} | Set emote to \`\`${skinId}\`\`*`);
-        if (!skin) {
-            res.setDescription(`*Could not find a emote named \`\`${skinId}\`\`*`)
-            return interaction.reply({embeds: [res]});
-        }
+        .setDescription(`*${interaction.user} | Set level to \`\`${level}\`\`*`);
 
         var bot = new Client;
         bot = config.bots[interaction.user.id];
-        console.log(skin.id)
-        bot.party.me.setEmote(skin.id);
+        bot.party.me.setLevel(level);
         interaction.reply({embeds: [res]})
     }
 };

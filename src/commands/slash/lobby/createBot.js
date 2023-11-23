@@ -4,6 +4,7 @@ const config = require('../../../config')
 const { Client, Enums } = require('fnbr');
 const { fstat } = require('fs');
 const fs = require('fs').promises;
+const { existsSync, readFileSync, writeFileSync } = require('fs')
 let BotClient = null;
 let BotAuth = null;
 
@@ -83,96 +84,155 @@ module.exports = {
                 components.addComponents(newAcc);
 
                 reply = await interaction.reply({ embeds: [accountsRes], components: [components] });
-                    const collector = (await reply).createMessageComponentCollector({ componentType: ComponentType.Button });
+                const collector = (await reply).createMessageComponentCollector({ componentType: ComponentType.Button });
                 
-                    collector.on('collect', async (buttonInteraction) => {
-                        if (buttonInteraction.customId === 'newaccount') {
-                            const modal = new ModalBuilder()
-                            .setCustomId('newaccountmodal')
-                            .setTitle('new Account.');
-    
-                            const authCode = new TextInputBuilder()
-                            .setCustomId('newaccountid')
-                            .setLabel("your Auth Code.")
-                            .setStyle(TextInputStyle.Short);
-    
-                            const authCodeBuilder = new ActionRowBuilder().addComponents(authCode);
-                            modal.addComponents(authCodeBuilder);
-                            const modalResponse = await buttonInteraction.showModal(modal);
+                collector.on('collect', async (buttonInteraction) => {
+                    if (buttonInteraction.customId === 'newaccount') {
+                        const modal = new ModalBuilder()
+                        .setCustomId('newaccountmodal')
+                        .setTitle('new Account.');
+
+                        const authCode = new TextInputBuilder()
+                        .setCustomId('newaccountid')
+                        .setLabel("your Auth Code.")
+                        .setStyle(TextInputStyle.Short);
+
+                        const authCodeBuilder = new ActionRowBuilder().addComponents(authCode);
+                        modal.addComponents(authCodeBuilder);
+                        const modalResponse = await buttonInteraction.showModal(modal);
+                    } else {
+                        let data = await fs.readFile(filePath, 'utf8'); 
+                        data = JSON.parse(data);
+                        for(var account in data) {
+                            if (data[account].accountId === buttonInteraction.customId) {
+                                var res = new EmbedBuilder()
+                                .setColor('#4b16ff')
+                                .setDescription(`*${interaction.user} | Creating BOT...*`);
+                                if (config.bots[buttonInteraction.user.id] == undefined) {
+                                    buttonInteraction.reply({embeds: [res]})
+                                    let auth = {
+                                        accountId: data[account].accountId,
+                                        deviceId: data[account].deviceId,
+                                        secret: data[account].secret
+                                    }
+                                    try {
+                                        BotClient = new Client({
+                                            "defaultStatus": "Lean Bot by FrostChanger.de",
+                                            "platform": "WIN",
+                                            "cachePresences": false,
+                                            "auth": {
+                                                "deviceAuth": auth,
+                                            },
+                                            "partyConfig": {
+                                                "privacy": Enums.PartyPrivacy.PRIVATE,
+                                                "joinConfirmation": false,
+                                                "joinability": "INVITE_AND_FORMER",
+                                                "maxSize": 16,
+                                                "chatEnabled": true
+                                            },
+                                            "debug": false
+                                        });
+
+                                        BotClient.on('ready', async () => {
+                                            BotClient.isReady = true;
+                                            config.bots[buttonInteraction.user.id] = BotClient;
+                                            BotClient.user.displayName = BotClient.user.displayName;
                             
+                                            // Respond to the user
+                                            const creationSuccess = new EmbedBuilder()
+                                                .setColor('#4b16ff')
+                                                .setDescription(`*${buttonInteraction.user} | Started your BOT as \`\`${BotClient.user.displayName}\`\`*`);
+                                            buttonInteraction.editReply({ embeds: [creationSuccess] });
+                                        });
+                            
+                                        BotClient.on('friend:request', async (req) => {
+                                            res.setDescription(`*${buttonInteraction.user} | friend request from \`\`${req.displayName}\`\`*`)
+                                            const accept = new ButtonBuilder()
+                                            .setCustomId('acceptfreq')
+                                            .setLabel('Accept')
+                                            .setStyle(ButtonStyle.Success)
+                            
+                                            const decline = new ButtonBuilder()
+                                            .setCustomId('declinefreq')
+                                            .setLabel('Decline')
+                                            .setStyle(ButtonStyle.Danger)
+                            
+                                            const components = new ActionRowBuilder()
+                                            .addComponents(accept, decline);
+                            
+                                            const collector = (await reply).createMessageComponentCollector({ componentType: ComponentType.Button });
+                                            collector.on('collect', async (interaction1) => {
+                                                if (interaction1.customId == 'acceptfreq') {
+                                                    req.accept();
+                                                    res.setDescription(`*${interaction1.user} | accepted \`\`${req.displayName}\`\`'s friend request*`)
+                                                    interaction1.reply({embeds: [res], ephemeral: true})
+                                                } else if (interaction1.customId == 'declinefreq') {
+                                                    req.decline();
+                                                    res.setDescription(`*${interaction1.user} | declined \`\`${req.displayName}\`\`'s friend request*`)
+                                                    interaction1.reply({embeds: [res], ephemeral: true})
+                                                }
+                                            })
+                                            buttonInteraction.followUp({embeds: [res], ephemeral: true, components: [components]})
+                                        })
+                            
+                                        BotClient.on('party:invite', async (req) => {
+                                            res.setDescription(`*${buttonInteraction.user} | party invite from \`\`${req.sender.displayName}\`\`*`)
+                                            const accept = new ButtonBuilder()
+                                            .setCustomId('acceptpinv')
+                                            .setLabel('Accept')
+                                            .setStyle(ButtonStyle.Success)
+                            
+                                            const decline = new ButtonBuilder()
+                                            .setCustomId('declinepinv')
+                                            .setLabel('Decline')
+                                            .setStyle(ButtonStyle.Danger)
+                            
+                                            const components = new ActionRowBuilder()
+                                            .addComponents(accept, decline);
+                            
+                                            const collector = (await reply).createMessageComponentCollector({ componentType: ComponentType.Button });
+                                            collector.on('collect', async (interaction1) => {
+                                                if (interaction1.customId == 'acceptpinv') {
+                                                    req.accept();
+                                                    res.setDescription(`*${interaction1.user} | accepted \`\`${req.sender.displayName}\`\`'s party invite*`)
+                                                    interaction1.reply({embeds: [res], ephemeral: true})
+                                                } else if (interaction1.customId == 'declinepinv') {
+                                                    req.decline();
+                                                    res.setDescription(`*${interaction1.user} | declined \`\`${req.sender.displayName}\`\`'s party invite*`)
+                                                    interaction1.reply({embeds: [res], ephemeral: true})
+                                                }
+                                            })
+                                            buttonInteraction.followUp({embeds: [res], ephemeral: true, components: [components]})
+                                        })
+                            
+                                        BotClient.login();
+                                    } catch (err) {
+                                        console.log(err)
+                                    }
+                                } else {
+                                    res.setDescription(`*${buttonInteraction.user} | You already have a running BOT called \`\`${config.bots[buttonInteraction.user.id].user.displayName}\`\`!*`)
+                                    buttonInteraction.reply({embeds: [res]})
+                                }
+                            }
                         }
-                    })
+                    }
+                })
                 
             }
             catch (error) {
                 if (error.code === 'ENOENT') {
                     const modal = new ModalBuilder()
-                        .setCustomId('newaccountmodal')
-                        .setTitle('Enter Your Auth Code');
-        
-                    const authInput = new TextInputBuilder()
-                        .setCustomId('authcodeinput')
-                        .setLabel("Auth Code")
-                        .setStyle(TextInputStyle.Short);
-        
-                    const actionRow = new ActionRowBuilder().addComponents(authInput);
-                    modal.addComponents(actionRow);
-        
+                    .setCustomId('newaccountmodal')
+                    .setTitle('new Account.');
+
+                    const authCode = new TextInputBuilder()
+                    .setCustomId('newaccountid')
+                    .setLabel("your Auth Code.")
+                    .setStyle(TextInputStyle.Short);
+
+                    const authCodeBuilder = new ActionRowBuilder().addComponents(authCode);
+                    modal.addComponents(authCodeBuilder);
                     await interaction.showModal(modal);
-        
-                    client.on('modalSubmit', async (modalInteraction) => {
-                        if (modalInteraction.customId === 'newaccountmodal') {
-                            const enteredAuthCode = modalInteraction.fields.getTextInputValue('authcodeinput');
-                    
-                            try {
-                                BotClient = new Client({
-                                    "defaultStatus": "Lean Bot by FrostChanger.de",
-                                    "platform": "WIN",
-                                    "cachePresences": false,
-                                    "auth": {
-                                        "authorizationCode": enteredAuthCode,
-                                    },
-                                    "partyConfig": {
-                                        "privacy": Enums.PartyPrivacy.PRIVATE,
-                                        "joinConfirmation": false,
-                                        "joinability": "INVITE_AND_FORMER",
-                                        "maxSize": 16,
-                                        "chatEnabled": true
-                                    },
-                                    "debug": false
-                                });
-                    
-                                await BotClient.login();
-                    
-                                BotClient.on('ready', async () => {
-                                    BotClient.isReady = true;
-                                    BotClient.user.displayName = BotClient.user.displayName;
-                    
-                                    const accountData = {
-                                        [BotClient.user.displayName]: {
-                                            "accountId": BotClient.user.displayName, 
-                                            "deviceId": "exampleDeviceId",  
-                                            "secret": "exampleSecret"
-                                        }
-                                    };
-                                    await fs.writeFile(filePath, JSON.stringify(accountData, null, 2));
-                    
-                                    // Respond to the user
-                                    const creationSuccess = new EmbedBuilder()
-                                        .setColor('#4b16ff')
-                                        .setDescription(`*Bot created successfully as ${BotClient.user.displayName}!*`);
-                                    await modalInteraction.reply({ embeds: [creationSuccess] });
-                                });
-                    
-                            } catch (err) {
-                                console.error('Login failed:', err);
-                                const failLogin = new EmbedBuilder()
-                                    .setColor('#ffffff')
-                                    .setTitle(`${config.emojis.wrong} You entered an invalid or expired authorization code. Support: https://discord.gg/frostchanger`);
-                                await modalInteraction.reply({embeds: [failLogin]});
-                            }
-                        }
-                    });
                 } 
                 else 
                 {
