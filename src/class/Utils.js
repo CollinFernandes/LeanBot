@@ -12,8 +12,12 @@ async function DownloadCosmetics() {
     await writeFileSync(file_path, JSON.stringify(json?.data, null, 2));
 }
 
-async function FindCosmetic(cosmetics, query, type) {
+async function FindCosmeticByType(cosmetics, query, type) {
     return cosmetics.find((cosmetic) => (cosmetic.id.toLowerCase() === query.toLowerCase() || cosmetic.name.toLowerCase() === query.toLowerCase()) && cosmetic.type.value === type);
 }
 
-module.exports = { DownloadCosmetics, FindCosmetic }
+async function FindCosmetic(cosmetics, query) {
+    return cosmetics.find((cosmetic) => (cosmetic.id.toLowerCase() === query.toLowerCase() || cosmetic.name.toLowerCase() === query.toLowerCase()));
+}
+
+module.exports = { DownloadCosmetics, FindCosmetic, FindCosmeticByType  }

@@ -18,7 +18,7 @@ module.exports = {
     run: async (client, interaction) => {
         const { options, channel } = interaction;
         const skinId = options.getString('emoteid')
-        const skin = await FindCosmetic(config.cosmetics, skinId, "emote")
+        const skin = await FindCosmeticByType(config.cosmetics, skinId, "emote")
         const res = new EmbedBuilder()
         .setColor('#4b16ff')
         .setDescription(`*${interaction.user} | Set emote to \`\`${skinId}\`\`*`);
@@ -30,7 +30,7 @@ module.exports = {
         var bot = new Client;
         bot = config.bots[interaction.user.id];
         console.log(skin.id)
-        bot.party.me.setEmote(skin.id);
+        bot.party.me.setEmote(skin.id, `FortniteGame/Plugins/GameFeatures/BRCosmetics/Content/Athena/Items/Cosmetics/Dances`);
         interaction.reply({embeds: [res]})
     }
 };

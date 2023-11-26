@@ -18,7 +18,7 @@ module.exports = {
     run: async (client, interaction) => {
         const { options, channel } = interaction;
         const skinId = options.getString('backpack')
-        const skin = await FindCosmetic(config.cosmetics, skinId, "backpack")
+        const skin = await FindCosmeticByType(config.cosmetics, skinId, "backpack")
         const res = new EmbedBuilder()
         .setColor('#4b16ff')
         .setDescription(`*${interaction.user} | Set backpack to \`\`${skinId}\`\`*`);

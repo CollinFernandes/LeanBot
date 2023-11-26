@@ -18,7 +18,7 @@ module.exports = {
     run: async (client, interaction) => {
         const { options, channel } = interaction;
         const skinId = options.getString('emoji')
-        const skin = await FindCosmetic(config.cosmetics, skinId, "emoji")
+        const skin = await FindCosmeticByType(config.cosmetics, skinId, "emoji")
         const res = new EmbedBuilder()
         .setColor('#4b16ff')
         .setDescription(`*${interaction.user} | Set emoji to \`\`${skinId}\`\`*`);
