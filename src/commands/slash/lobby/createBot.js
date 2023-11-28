@@ -29,7 +29,7 @@ module.exports = {
                 
     /**
      * @param {ExtendedClient} client 
-     * @param {ChatInputCommandInteraction} interaction 
+     * @param {ChatInputCommandInteraction} interaction
      */
     run: async (client, interaction) => {
         var reply = null;

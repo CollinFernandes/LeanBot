@@ -29,6 +29,7 @@ module.exports = {
         const filePath = `${process.cwd()}/temp/accounts/${interaction.user.id}.json`;
         const enteredAuthCode = interaction.fields.getTextInputValue('newaccountid');
         try {
+            var reply;
             if (config.bots[interaction.user.id] == undefined) {
                 BotClient = new Client({
                     "defaultStatus": "Lean Bot by FrostChanger.de",
@@ -56,7 +57,7 @@ module.exports = {
                     const creationSuccess = new EmbedBuilder()
                         .setColor('#4b16ff')
                         .setDescription(`*${interaction.user} | Started your BOT as \`\`${BotClient.user.displayName}\`\`*`);
-                    interaction.editReply({ embeds: [creationSuccess] });
+                    reply = interaction.editReply({ embeds: [creationSuccess] });
     
                     var data = null;
                     if (existsSync(`${process.cwd()}/temp/accounts/${interaction.user.id}.json`))
