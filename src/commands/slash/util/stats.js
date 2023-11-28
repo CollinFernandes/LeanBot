@@ -36,7 +36,6 @@ module.exports = {
                   });
               return cosmetic.data;
             } catch (err) {
-              console.log(err)  
               return undefined;
             }
         };

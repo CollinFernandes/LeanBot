@@ -2,7 +2,7 @@ const { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder } = requi
 const ExtendedClient = require('../../../class/ExtendedClient');
 const config = require('../../../config')
 const { Client, Enums } = require('fnbr');
-const { FindCosmetic } = require('../../../class/Utils');
+const { FindCosmeticByType } = require('../../../class/Utils');
 
 module.exports = {
     structure: new SlashCommandBuilder()
@@ -29,7 +29,7 @@ module.exports = {
 
         var bot = new Client;
         bot = config.bots[interaction.user.id];
-        await bot.party.me.setOutfit(skin.id);
+        await bot.party.me.setOutfit(skin.id, []);
         interaction.reply({embeds: [res]})
     }
 };

@@ -2,7 +2,7 @@ const { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder } = requi
 const ExtendedClient = require('../../../class/ExtendedClient');
 const config = require('../../../config')
 const { Client, Enums } = require('fnbr')
-const { FindCosmetic } = require('../../../class/Utils')
+const { FindCosmeticByType } = require('../../../class/Utils')
 
 module.exports = {
     structure: new SlashCommandBuilder()
@@ -30,7 +30,7 @@ module.exports = {
         var bot = new Client;
         bot = config.bots[interaction.user.id];
         console.log(skin.id)
-        bot.party.me.setEmote(skin.id, `FortniteGame/Plugins/GameFeatures/BRCosmetics/Content/Athena/Items/Cosmetics/Dances`);
+        await bot.party.me.setEmote(skin.id, skin.path);
         interaction.reply({embeds: [res]})
     }
 };
