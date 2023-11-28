@@ -4,8 +4,15 @@ const fs = require('fs').promises;
 const { existsSync, readFileSync, writeFileSync } = require('fs')
 let BotClient = null;
 let BotAuth = null;
+const { allowedPlaylists, websocketHeaders } = require('../../class/Constants');
 const ExtendedClient = require('../../class/ExtendedClient');
 const config = require('../../config');
+const axios = require('axios')
+const crypto = require('crypto')
+const xmlparser = require('xml-parser')
+const Websocket = require('ws')
+var os = require('os');
+var HttpsProxyAgent = require('https-proxy-agent');
 
 module.exports = {
     customId: 'newaccountmodal',
@@ -22,7 +29,7 @@ module.exports = {
         const filePath = `${process.cwd()}/temp/accounts/${interaction.user.id}.json`;
         const enteredAuthCode = interaction.fields.getTextInputValue('newaccountid');
         try {
-            if (config.bots[buttonInteraction.user.id] == undefined) {
+            if (config.bots[interaction.user.id] == undefined) {
                 BotClient = new Client({
                     "defaultStatus": "Lean Bot by FrostChanger.de",
                     "platform": "WIN",
@@ -52,12 +59,12 @@ module.exports = {
                     interaction.editReply({ embeds: [creationSuccess] });
     
                     var data = null;
-                    if (existsSync(`${process.cwd()}/temp/accounts/${buttonInteraction.user.id}.json`))
-                        data = JSON.parse(readFileSync(`${process.cwd()}/temp/accounts/${buttonInteraction.user.id}.json`))
+                    if (existsSync(`${process.cwd()}/temp/accounts/${interaction.user.id}.json`))
+                        data = JSON.parse(readFileSync(`${process.cwd()}/temp/accounts/${interaction.user.id}.json`))
                     else
                         data = JSON.parse(JSON.stringify({}))
                     data[BotClient.user.displayName] = BotAuth;
-                    writeFileSync(`${process.cwd()}/temp/accounts/${buttonInteraction.user.id}.json`, JSON.stringify(data, null, 2));
+                    writeFileSync(`${process.cwd()}/temp/accounts/${interaction.user.id}.json`, JSON.stringify(data, null, 2));
                 });
     
                 BotClient.on('deviceauth:created', (da) => {
@@ -125,6 +132,8 @@ module.exports = {
                 })
 
                 var bIsMatchmaking = false;
+                var bLog = false;
+                var leave_after = false;
                 BotClient.on('party:updated', async (updated) => {
 
                     switch (updated.meta.schema["Default:PartyState_s"]) {
@@ -171,13 +180,11 @@ module.exports = {
                         var partyPlayerIds = BotClient.party.members.filter(x => x.isReady).map(x => x.id).join(',')
                 
                         const bucketId = `${PartyMatchmakingInfo.buildId}:${PartyMatchmakingInfo.playlistRevision}:${PartyMatchmakingInfo.regionId}:${playlistId}`
-                       console.log(bucketId)
                 
                 
                 
                         // auth.missing_player_id
                 
-                        console.log(partyPlayerIds)
                 
                         var query = new URLSearchParams();
                         query.append("partyPlayerIds", partyPlayerIds);
@@ -197,11 +204,12 @@ module.exports = {
                 
                         const TicketRequest = (
                           await axios.get(
-                            `https://fortnite-public-service-prod11.ol.epicgames.com/fortnite/api/game/v2/matchmakingservice/ticket/player/${client.user.id}?${query}`,
+                            `https://fortnite-public-service-prod11.ol.epicgames.com/fortnite/api/game/v2/matchmakingservice/ticket/player/${BotClient.user.id}?${query}`,
                             {
                               headers: {
-                                Accept: 'application/json',
-                                Authorization: `Bearer ${token}`
+                                "Accept": 'application/json',
+                                "Authorization": `Bearer ${token}`,
+                                "User-Agent": "Fortnite/++Fortnite+Release-27.11-CL-29739262 Windows/10.0.22621.1.256.64bit",
                               }
                             }
                           )
@@ -221,15 +229,7 @@ module.exports = {
                         /**
                          * @type {String}
                          */
-                        const HashRequest = (
-                          await axios.post(
-                            "https://plebs.polynite.net/api/checksum",
-                            ticket,
-                            {
-                              Accept: 'application/json'
-                            }
-                          )
-                        );
+                        const HashRequest = calcChecksum(ticket.payload, ticket.signature)
                 
                         if (TicketRequest.status != 200) {
                           console.log(`[${'Matchmaking'.cyan}]`, 'Error while obtaining Hash'.red);
@@ -237,9 +237,8 @@ module.exports = {
                           return;
                         }
                 
-                        console.log(HashRequest)
                 
-                        const hash = HashRequest.data.checksum;
+                        const hash = HashRequest;
                 
                         var MMSAuth = [
                           "Epic-Signed",
@@ -353,13 +352,13 @@ module.exports = {
                         } else {
                           if (leave_after == false) {
                             async function timeexpire() {
-                      BotClient.party.chat.send("Time expired!")
-                      await sleep(1.2)
-                      BotClient.party.leave()
-                      console.log("[PARTY] Left party due to party time expiring!")
-                      console.log("[PARTY] Time tracking stoped!")
-                      timerstatus = false
-                    }
+                            BotClient.party.chat.send("Time expired!")
+                            await sleep(1.2)
+                            BotClient.party.leave()
+                            console.log("[PARTY] Left party due to party time expiring!")
+                            console.log("[PARTY] Time tracking stoped!")
+                            timerstatus = false
+                        }
                             this.ID = setTimeout(timeexpire, 3600000)
                             break;
                           }
@@ -376,17 +375,21 @@ module.exports = {
                       }
                     }
                 })
-    
+
                 BotClient.login();
             } else {
-                res.setDescription(`*${buttonInteraction.user} | You already have a running BOT called \`\`${config.bots[buttonInteraction.user.id].user.displayName}\`\`!*`)
+                res.setDescription(`*${interaction.user} | You already have a running BOT called \`\`${config.bots[interaction.user.id].user.displayName}\`\`!*`)
                 interaction.reply({embeds: [res]})
             }
         } catch (err) {
+            console.log(err)
             const failLogin = new EmbedBuilder()
                 .setColor('#ffffff')
                 .setTitle(`You entered an invalid or expired authorization code. Support: https://discord.gg/frostchanger`);
-            await interaction.editReply({embeds: [failLogin]});
+            if (interaction.replied)
+                await interaction.editReply({embeds: [failLogin]});
+            else
+                await interaction.reply({embeds: [failLogin]});
         }
     }
 };
